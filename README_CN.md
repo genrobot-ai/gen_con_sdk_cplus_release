@@ -68,7 +68,15 @@ sudo udevadm trigger
 ### 单爪启动demo
 
 ```
-cd gen_controller_sdk_cpp
+cd gen_con_sdk_cplus_release
+
+mkdir -p build && cd build #如果存在build文件夹则删除
+
+cmake ..
+
+make
+
+cd ..
 
 ./start_gripper.cpp left   # 当前配置夹爪固定打开5cm
 
@@ -93,7 +101,7 @@ gripper distance数据
 
 ### 双爪启动demo
 ```
-cd gen_controller_sdk_cpp
+cd gen_con_sdk_cplus_release
 启动
 ./start_gripper.cpp left
 另一终端启动
@@ -118,4 +126,60 @@ encoder_callback         //夹爪开合度数据回调函数
 if (databus_) {
         databus_->setTargetDistance(distance);
 ```
-            
+
+## 设备相关参数获取 （不要启动其它控制程序）
+
+### 直接运行脚本
+```
+./camera_cmd.sh [left|right]  <command>
+```
+
+```
+
+**参数说明：**
+
+| 参数       | 说明                                |
+|----------- |------------------------------------|
+| `camerarc`| 中间相机标定（生成 `cam0_sensor.yaml`）|
+| `camerarl`| 左侧相机标定（生成 `cam1_sensor.yaml`）|
+| `camerarr`| 右侧相机标定（生成 `cam2_sensor.yaml`）|
+| `MCUID`   | 查询设备 MCUID                         |
+
+**标定生成的 YAML 文件** 会保存到 `gen_controller_sdk_cpp/calib_result` 目录下。
+```
+### **示例：**
+
+
+### 单夹爪
+#### 获取相机标定文件
+```
+中间相机
+./camera_cmd.sh camerarc
+左边相机
+./camera_cmd.sh camerarl
+右边相机
+./camera_cmd.sh camerarr
+```
+#### 查询设备 ID
+```
+./camera_cmd.sh MCUID
+```
+### 双夹爪
+#### 获取相机标定文件
+```
+中间相机
+./camera_cmd.sh left camerarc
+./camera_cmd.sh right camerarc
+左边相机
+./camera_cmd.sh left camerarl
+./camera_cmd.sh right camerarl
+右边相机
+./camera_cmd.sh left camerarr 
+./camera_cmd.sh right camerarr
+```
+
+#### 查询设备 ID
+```
+./camera_cmd.sh left MCUID
+./camera_cmd.sh right MCUID
+```

@@ -126,6 +126,12 @@ public:
                                    const std::string& output_dir = "");
 
     /**
+     * @brief Extract ASCII payload between two das\\r\\n magic frames (e.g. MCUID reply).
+     * @return Payload string, or nullopt if framing not found.
+     */
+    static std::optional<std::string> extractDasFramedPayload(const std::vector<uint8_t>& data);
+
+    /**
      * @brief Calibration info struct
      */
     struct CalibInfo {

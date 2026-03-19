@@ -44,6 +44,8 @@ public:
      * @param camera_calib_callback Camera calib callback
      * @param yaml_filename YAML output filename for calib
      * @param output_dir Output dir for calib
+     * @param quiet_console If true, suppress routine diagnostic prints (threads, packet dump, etc.)
+     * @param mcuid_ascii_only If true with is_calib_cmd, parse reply as das-framed ASCII (MCUID), not protobuf
      */
     DataBus(const std::string& tty_port = "/dev/ttyUSB0",
             int baudrate = 921600,
@@ -55,7 +57,9 @@ public:
             EncoderCallback encoder_callback = nullptr,
             CameraCalibCallback camera_calib_callback = nullptr,
             const std::string& yaml_filename = "",
-            const std::string& output_dir = "");
+            const std::string& output_dir = "",
+            bool quiet_console = false,
+            bool mcuid_ascii_only = false);
 
     ~DataBus();
 
@@ -150,6 +154,8 @@ private:
     CameraCalibCallback camera_calib_callback_;
     std::string yaml_filename_;
     std::string output_dir_;
+    bool quiet_console_;
+    bool mcuid_ascii_only_;
 
     std::unique_ptr<std::thread> read_thread_;
     std::unique_ptr<std::thread> parse_thread_;
@@ -161,19 +167,26 @@ private:
 /**
  * @brief Check and fix serial device permission
  */
-bool checkAndFixPermission(const std::string& port);
+bool checkAndFixPermission(const std::string& port, bool verbose = true);
 
 /**
  * @brief Find configured USB serial (symlink)
  * @return Serial path or empty if not found
  */
-std::string findConfiguredSerialPort();
+std::string findConfiguredSerialPort(bool verbose = true);
 
 /**
  * @brief Find USB serial device
  * @param pattern Device name pattern (deprecated, for compatibility)
+ * @param verbose If false, omit informational messages (e.g. MCUID CLI)
  */
-std::string findSerialPort(const std::string& pattern = "ttyUSB");
+std::string findSerialPort(const std::string& pattern = "ttyUSB", bool verbose = true);
+
+/**
+ * @brief Serial path for left/right gripper symlink (udev: ttyDeviceLeft / ttyDeviceRight)
+ * @param side "left" or "right" (case-sensitive)
+ */
+std::string findGripperSerialBySide(const std::string& side, bool verbose = true);
 
 } // namespace das
 

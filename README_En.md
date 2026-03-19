@@ -1,90 +1,99 @@
 # genrobot_controller_sdk_cpp
 ## Environment Setup
 ```
-USB interface must be 3.0
+USB interface must be USB 3.0
 ```
 
 ## USB Interface Configuration
 
-### Single Gripper USB Configuration
-The final configuration is as shown in the figure. After configuration, this USB port can recognize any Gen Controller, and no further configuration is required. The template file is located at:
+### Single Gripper USB Port Configuration
+The final configuration looks as shown in the figures. After configuration, this USB port can recognize any Gen Controller; no further configuration is needed. The template file is stored at:
 ```
 config/99-usb-serial.rules
 ```
 ![image/image_1.png](image/image_1.png)
 
-You need to modify the following:
+What you need to modify:
 ![image/image_2.png](image/image_2.png)
 
-To modify parameter 1, run:
+**Parameter 1** — run:
+
 ```
 cd /dev && ls | grep ttyUSB
 udevadm info -a -n /dev/ttyUSB* | grep -E "KERNELS|DRIVERS"
 ```
 
-Configure the second KERNELS value from the output to position 1:
+Set the **second** `KERNELS` value from the output to position 1:
 ![image/image_3.png](image/image_3.png)
 
-To modify parameter 2, run:
+**Parameter 2** — run:
 ```
 v4l2-ctl --list-devices
 ```
-Output:
+Example output:
 ![image/image_4.png](image/image_4.png)
 
-Then for the first camera on that USB, run:
+Then, for the **first** camera on that USB, run:
 ```
 udevadm info -a -n /dev/video* | grep -E "KERNELS|SUBSYSTEMS"
 ```
-Configure the first KERNELS value from the output to position 2
+Set the **first** `KERNELS` value from the output to position 2:
 ![image/image_5.png](image/image_5.png)
 
-Then copy the template file to the following location:
+Then copy the template file to:
 ```
 sudo cp config/99-usb-serial.rules /etc/udev/rules.d/
 ```
-Then reload the configuration:
+Reload rules:
 ```
 sudo udevadm control --reload-rules
 sudo udevadm trigger
 ```
 
-### Dual Gripper USB Configuration
-The final configuration is as shown in the figure.
+### Dual Gripper USB Port Configuration
+The final configuration looks as shown in the figures.
 ![image/image_6.png](image/image_6.png)
 
-Modifications required:
+Fields to modify:
 ![image/image_7.png](image/image_7.png)
 
-First plug in the left gripper and configure it using the single gripper method; then unplug the left gripper, plug in the right gripper, and configure again using the single gripper method; finally reload the configuration.
+First plug in the **left** gripper and configure it using the single-gripper steps above; then unplug the left gripper, plug in the **right** gripper, and repeat the single-gripper configuration; finally reload the rules as above.
 
-### Multi-Gripper USB Configuration
-Add configurations to 99-usb-serial.rules in the same way.
+### Multi-Gripper USB Port Configuration
+Add more entries to `99-usb-serial.rules` in the same way.
 
 ## Running the SDK
-Run the `start_gripper.cpp` script directly (it will compile on demand each run; changes to the script take effect on the next execution).
+Run the `start_gripper.cpp` script directly (it compiles on demand each run; edit the script and run again for changes to take effect).
 
 ### Single Gripper Demo
 
 ```
-cd gen_controller_sdk_cpp
+cd gen_con_sdk_cplus_release
 
-./start_gripper.cpp left   # Current config: gripper opens to fixed 5cm
+mkdir -p build && cd build   # Remove the build folder first if it already exists
 
-./start_gripper.cpp left --distance 0.08  # Gripper opens to fixed 8cm; distance range is [0.0, 0.103], i.e. max 10cm
+cmake ..
 
-./start_gripper.cpp left --sine-wave  # Gripper opens and closes continuously for 10s
+make
+
+cd ..
+
+./start_gripper.cpp left   # With current config, gripper opens to a fixed 5 cm
+
+./start_gripper.cpp left --distance 0.08   # Gripper opens to a fixed 8 cm; valid range [0.0, 0.103], i.e. up to ~10 cm
+
+./start_gripper.cpp left --sine-wave   # Gripper opens and closes continuously for 10 s
 
 ```
 
-After startup, three image windows will open:
+After startup, three image windows appear:
 ```
 /camera_0   # Center camera
 /camera_1   # Left camera
 /camera_2   # Right camera
 
 ```
-Printed data includes:
+Console output includes:
 ```
 Tactile data
 Gripper distance data
@@ -92,27 +101,82 @@ Gripper distance data
 
 ### Dual Gripper Demo
 ```
-cd gen_controller_sdk_cpp
-Start:
+cd gen_con_sdk_cplus_release
+Terminal 1:
 ./start_gripper.cpp left
-In another terminal, start:
+Terminal 2:
 ./start_gripper.cpp right
 ```
 
-After startup, six image windows will open.
+After startup, six image windows appear.
 
 ## Program Usage
-### Sensor Data Reading
-Use the following callbacks to obtain data:
-```
-capture_frames_callback  // Camera frame capture callback
-tactile_callback         // Tactile data callback
-encoder_callback         // Gripper opening/closing (encoder) data callback
+### Reading Sensor Data
+Use the following callbacks:
 ```
 
-### Gripper Open/Close Control Command
-Use the following commands:
+capture_frames_callback  // Camera frame capture callback
+tactile_callback         // Tactile data callback
+encoder_callback         // Gripper opening distance callback
+```
+
+### Sending Gripper Open/Close Commands
+Use:
 ```
 if (databus_) {
         databus_->setTargetDistance(distance);
+```
+
+## Device Parameter Retrieval (do not run other control programs)
+
+### Run the Script Directly
+```
+./camera_cmd.sh [left|right]  <command>
+```
+
+**Parameters:**
+
+| Parameter   | Description |
+|------------|-------------|
+| `camerarc` | Calibrate center camera (writes `cam0_sensor.yaml`) |
+| `camerarl` | Calibrate left camera (writes `cam1_sensor.yaml`) |
+| `camerarr` | Calibrate right camera (writes `cam2_sensor.yaml`) |
+| `MCUID`    | Query device MCUID |
+
+**Calibration YAML files** are saved under `gen_controller_sdk_cpp/calib_result`.
+
+### Examples
+
+### Single Gripper
+#### Obtain Camera Calibration Files
+```
+Center camera
+./camera_cmd.sh camerarc
+Left camera
+./camera_cmd.sh camerarl
+Right camera
+./camera_cmd.sh camerarr
+```
+#### Query Device ID
+```
+./camera_cmd.sh MCUID
+```
+### Dual Gripper
+#### Obtain Camera Calibration Files
+```
+Center camera
+./camera_cmd.sh left camerarc
+./camera_cmd.sh right camerarc
+Left camera
+./camera_cmd.sh left camerarl
+./camera_cmd.sh right camerarl
+Right camera
+./camera_cmd.sh left camerarr
+./camera_cmd.sh right camerarr
+```
+
+#### Query Device ID
+```
+./camera_cmd.sh left MCUID
+./camera_cmd.sh right MCUID
 ```
