@@ -594,7 +594,7 @@ std::string findSerialPort(const std::string& pattern, bool verbose) {
         std::cout << "Error: No configured USB serial port found" << std::endl;
         std::cout << std::string(60, '=') << std::endl;
         std::cout << "\nTo configure USB device:" << std::endl;
-        std::cout << "1. See config guide in 配置方法/README_CN.md" << std::endl;
+        std::cout << "1. See README.md for USB serial configuration" << std::endl;
         std::cout << "2. Create udev rules file (e.g. 99-usb-serial.rules)" << std::endl;
         std::cout << "3. Copy rules to /etc/udev/rules.d/" << std::endl;
         std::cout << "4. Reload udev:" << std::endl;

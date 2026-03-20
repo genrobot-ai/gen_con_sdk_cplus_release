@@ -355,7 +355,7 @@ void CameraCapture::initCameras() {
             std::cout << "\n" << std::string(60, '=') << std::endl;
             std::cout << "Error: No configured camera devices found" << std::endl;
             std::cout << std::string(60, '=') << std::endl;
-            std::cout << "\nSee 配置方法/README_CN.md to configure cameras." << std::endl;
+            std::cout << "\nSee README.md to configure cameras." << std::endl;
             std::cout << "Create udev rules with SYMLINK+=\"left_video_0_main\", etc." << std::endl;
             std::cout << "Copy to /etc/udev/rules.d/ and run udevadm control --reload-rules; udevadm trigger" << std::endl;
             std::cout << std::string(60, '=') << "\n" << std::endl;
@@ -378,7 +378,7 @@ void CameraCapture::initCameras() {
                 std::cout << cam << " ";
             }
             std::cout << std::endl;
-            std::cout << "Configure video_0, video_1, video_2 symlinks. See 配置方法/README_CN.md" << std::endl;
+            std::cout << "Configure video_0, video_1, video_2 symlinks. See README.md" << std::endl;
             return;
         }
 
@@ -404,7 +404,7 @@ void CameraCapture::initCameras() {
         std::cout << "\nError: No cameras available" << std::endl;
         std::cout << "Diagnose: ls /dev/video*; v4l2-ctl --list-devices; ls -l /dev/*_video_*" << std::endl;
         std::cout << "Fix permission: sudo chmod 666 /dev/*_video_*" << std::endl;
-        std::cout << "See 配置方法/README_CN.md to configure cameras" << std::endl;
+        std::cout << "See README.md to configure cameras" << std::endl;
         return;
     }
 

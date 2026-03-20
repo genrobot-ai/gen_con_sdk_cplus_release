@@ -1,12 +1,12 @@
 cmake_minimum_required(VERSION 3.10)
 project(cpp_sdk VERSION 1.0.0)
 
-# 设置C++标准
+# C++ standard
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -O2")
 
-# 查找OpenCV
+# OpenCV
 find_package(OpenCV REQUIRED)
 if(OpenCV_FOUND)
     message(STATUS "OpenCV found: ${OpenCV_VERSION}")
@@ -14,16 +14,16 @@ if(OpenCV_FOUND)
     message(STATUS "OpenCV libraries: ${OpenCV_LIBS}")
 endif()
 
-# 查找线程库
+# Threads
 find_package(Threads REQUIRED)
 
-# 头文件目录
+# Include directories
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${OpenCV_INCLUDE_DIRS}
 )
 
-# SDK库源文件
+# SDK library sources
 set(SDK_SOURCES
     src/das_protocol.cpp
     src/pack.cpp
@@ -32,23 +32,23 @@ set(SDK_SOURCES
     src/gripper_system.cpp
 )
 
-# 创建静态库
+# Static library
 add_library(cpp_sdk_static STATIC ${SDK_SOURCES})
 target_link_libraries(cpp_sdk_static
     ${OpenCV_LIBS}
     Threads::Threads
 )
 
-# 创建共享库
+# Shared library
 add_library(cpp_sdk SHARED ${SDK_SOURCES})
 target_link_libraries(cpp_sdk
     ${OpenCV_LIBS}
     Threads::Threads
 )
 
-# start_gripper: 使用根目录的 start_gripper.cpp 直接执行（编译并运行），不在此构建
+# start_gripper: run root start_gripper.cpp directly (self-compiles); not built here
 
-# 相机标定命令工具 - camera_cmd
+# Camera calibration CLI: camera_cmd
 add_executable(camera_cmd src/camera_cmd.cpp)
 target_link_libraries(camera_cmd
     cpp_sdk_static
@@ -56,7 +56,7 @@ target_link_libraries(camera_cmd
     Threads::Threads
 )
 
-# 安装规则
+# Install rules
 install(TARGETS camera_cmd cpp_sdk cpp_sdk_static
     RUNTIME DESTINATION bin
     LIBRARY DESTINATION lib
@@ -65,10 +65,10 @@ install(TARGETS camera_cmd cpp_sdk cpp_sdk_static
 
 install(DIRECTORY include/ DESTINATION include)
 
-# 创建calib_result目录
+# Ensure calib_result exists
 file(MAKE_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/calib_result)
 
-# 输出构建信息
+# Build summary
 message(STATUS "")
 message(STATUS "=== cpp_sdk Build Configuration ===")
 message(STATUS "")
