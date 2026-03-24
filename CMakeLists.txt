@@ -30,6 +30,7 @@ set(SDK_SOURCES
     src/databus.cpp
     src/camera.cpp
     src/gripper_system.cpp
+    src/tactile_processing.cpp
 )
 
 # Static library

@@ -84,6 +84,8 @@ cd ..
 
 ./start_gripper.cpp left --sine-wave   # Gripper opens and closes continuously for 10 s
 
+./start_gripper.cpp left --print-tactile-info  #Tactile Data Reading
+
 ```
 
 After startup, three image windows appear:

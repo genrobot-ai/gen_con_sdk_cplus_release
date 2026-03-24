@@ -21,6 +21,7 @@ DIR="$(cd "$(dirname "$0")" && pwd)"; BIN=$(mktemp -u).out; ERR=$(mktemp 2>/dev/
 #include "gripper_system.hpp"
 #include "databus.hpp"
 #include "camera.hpp"
+#include "tactile_processing.hpp"
 
 using namespace das;
 
@@ -319,19 +320,23 @@ void capture_frames_callback(CameraCapture* camera) {
 }
 
 /**
- * @brief Tactile data callback
+ * @brief Build tactile callback: prints grid only when print_tactile_info is true.
  */
-void tactile_callback(const std::vector<uint8_t>& record_data) {
-    // std::cout << "Tactile data: length=" << record_data.size() << " bytes" << std::endl;
-    if (record_data.size() != 448) {
-        return;
-    }
+das::GripperSystem::TactileCallback make_tactile_callback(bool print_tactile_info) {
+    return [print_tactile_info](const std::vector<uint8_t>& record_data) {
+        if (record_data.size() != 448) {
+            return;
+        }
 
-    try {
-        std::cout << "tactile: left224, right224" << std::endl;
-    } catch (const std::exception& e) {
-        std::cerr << "Tactile data error: " << e.what() << std::endl;
-    }
+        try {
+            std::vector<int> tactile_1000 = das::convert_tactile_448_to_1000(record_data);
+            if (print_tactile_info) {
+                das::print_tactile_1000_grid(tactile_1000);
+            }
+        } catch (const std::exception& e) {
+            std::cerr << "Tactile data error: " << e.what() << std::endl;
+        }
+    };
 }
 
 /**
@@ -363,12 +368,14 @@ void printUsage(const char* program) {
     std::cout << "  --center <m>            Sine center (m), default 0.05" << std::endl;
     std::cout << "  --frequency <Hz>         Sine frequency (Hz), default 0.5" << std::endl;
     std::cout << "  --duration <s>           Sine duration (s), 0=infinite, default 10.0" << std::endl;
+    std::cout << "  --print-tactile-info    Print tactile grid in tactile callback (default: off)" << std::endl;
     std::cout << "  -h, --help              Show this help" << std::endl;
     std::cout << std::endl;
     std::cout << "Examples:" << std::endl;
     std::cout << "  " << program << " left                      # Start left gripper" << std::endl;
     std::cout << "  " << program << " right --distance 0.1      # Right gripper, 10cm" << std::endl;
     std::cout << "  " << program << " left --sine-wave          # Left gripper, sine wave" << std::endl;
+    std::cout << "  " << program << " right --print-tactile-info  # Right gripper, print tactile grid" << std::endl;
 }
 
 int main(int argc, char* argv[]) {
@@ -401,6 +408,7 @@ int main(int argc, char* argv[]) {
     float center = 0.05f;
     float frequency = 0.5f;
     float duration = 10.0f;
+    bool print_tactile_info = false;
 
     for (int i = 2; i < argc; i++) {
         std::string arg = argv[i];
@@ -409,6 +417,8 @@ int main(int argc, char* argv[]) {
             camera_resolutions = argv[++i];
         } else if (arg == "--no-preview") {
             show_preview = false;
+        } else if (arg == "--print-tactile-info") {
+            print_tactile_info = true;
         } else if (arg == "--distance" && i + 1 < argc) {
             distance = std::stof(argv[++i]);
         } else if (arg == "--sine-wave") {
@@ -445,7 +455,7 @@ int main(int argc, char* argv[]) {
         camera_resolutions,
         show_preview,
         video_devices,
-        tactile_callback,
+        make_tactile_callback(print_tactile_info),
         encoder_callback,
         capture_frames_callback
     );

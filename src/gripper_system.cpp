@@ -134,7 +134,7 @@ bool GripperSystem::start() {
             921600,
             0.5,
             false,
-            50,  // 50Hz encoder query
+            30,  // 30Hz encoder query
             0,   // Tactile query disabled
             tactile_callback_,
             encoder_callback_

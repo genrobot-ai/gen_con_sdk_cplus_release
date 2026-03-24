@@ -84,6 +84,8 @@ cd ..
 
 ./start_gripper.cpp left --sine-wave  # 夹爪持续开合10s
 
+./start_gripper.cpp left --print-tactile-info  #触觉数据读取
+
 ```
 
 启动后会弹出三个图像窗口:
