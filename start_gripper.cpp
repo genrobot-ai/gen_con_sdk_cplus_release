@@ -217,13 +217,12 @@ std::map<std::string, SideConfig> SIDE_CONFIG = {
 };
 
 /**
- * @brief Camera frame capture callback
+ * @brief Camera frame capture callback — uses background grab thread
  */
 void capture_frames_callback(CameraCapture* camera) {
     std::cout << "\nCapturing " << camera->cameras_.size() << " camera(s)..." << std::endl;
     std::cout << "Press ESC or Ctrl+C to stop" << std::endl;
 
-    // Create preview windows
     if (camera->show_preview_) {
         for (auto& cam : camera->cameras_) {
             cv::namedWindow(cam.window_name, cv::WINDOW_NORMAL);
@@ -231,68 +230,63 @@ void capture_frames_callback(CameraCapture* camera) {
         }
     }
 
-    int frame_num = 0;
+    camera->startGrabThread();
+
     double target_fps = 30.0;
     double frame_interval = 1.0 / target_fps;
 
     try {
         while (camera->running_) {
-            std::vector<std::pair<CameraInfo*, cv::Mat>> frames_data;
-            auto timestamp_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(
-                std::chrono::system_clock::now().time_since_epoch()).count();
             auto start_time = std::chrono::steady_clock::now();
+            std::vector<std::pair<CameraInfo*, cv::Mat>> frames_data;
 
-            // Read frames from all cameras
             for (auto& cam : camera->cameras_) {
-                cv::Mat frame;
-                bool ret = cam.cap.read(frame);
-                if (!ret) {
-                    frame = cv::Mat();
-                } else {
-                    // Call callback
-                    if (camera->frame_callback_) {
-                        try {
-                            camera->frame_callback_(cam.id, frame, timestamp_ns);
-                        } catch (const std::exception& e) {
-                            std::cerr << "Callback error: " << e.what() << std::endl;
+                auto [frame, ts_ns] = camera->getLatest(cam);
+                if (!frame.empty()) {
+                    double now_sec = std::chrono::duration<double>(
+                        std::chrono::steady_clock::now().time_since_epoch()).count();
+                    cam.disp_fps_ts.push_back(now_sec);
+                    if (cam.disp_fps_ts.size() > 30) cam.disp_fps_ts.pop_front();
+                    if (cam.disp_fps_ts.size() >= 2) {
+                        double dt = cam.disp_fps_ts.back() - cam.disp_fps_ts.front();
+                        if (dt > 0) {
+                            cam.disp_fps_val = (static_cast<double>(cam.disp_fps_ts.size()) - 1.0) / dt;
                         }
                     }
-                    cam.frame_count++;
                 }
                 frames_data.push_back({&cam, frame});
             }
 
-            // Show live preview
             if (camera->show_preview_) {
                 for (const auto& [cam, frame] : frames_data) {
                     if (!frame.empty()) {
-                        // Current time
                         auto now = std::chrono::system_clock::now();
                         auto time = std::chrono::system_clock::to_time_t(now);
                         std::tm tm = *std::localtime(&time);
                         std::ostringstream oss;
                         oss << std::put_time(&tm, "%Y-%m-%d %H:%M:%S");
 
-                        std::string info_text = "Camera_" + std::to_string(cam->id) + " | " 
+                        std::string info_text = "Camera_" + std::to_string(cam->id) + " | "
                                                 + oss.str() + " | Frames: " + std::to_string(cam->frame_count);
-                        
+
                         cv::Mat display_frame = frame.clone();
-                        cv::putText(display_frame, info_text, cv::Point(10, 30), 
+                        cv::putText(display_frame, info_text, cv::Point(10, 30),
                                    cv::FONT_HERSHEY_SIMPLEX, 0.7, cv::Scalar(0, 255, 0), 2);
-                        
+
+                        std::ostringstream fps_oss;
+                        fps_oss << "Cap: " << std::fixed << std::setprecision(1) << cam->cap_fps_val
+                                << "  Disp: " << std::fixed << std::setprecision(1) << cam->disp_fps_val;
+                        cv::putText(display_frame, fps_oss.str(), cv::Point(10, 60),
+                                   cv::FONT_HERSHEY_SIMPLEX, 0.7, cv::Scalar(0, 255, 255), 2);
+
                         cv::imshow(cam->window_name, display_frame);
                     }
                 }
-
-                // Check ESC
                 if (cv::waitKey(1) == 27) {
                     camera->running_ = false;
                 }
             }
 
-            frame_num++;
-
-            // Frame rate
             auto elapsed = std::chrono::steady_clock::now() - start_time;
             auto sleep_time = std::chrono::duration<double>(frame_interval) - elapsed;
             if (sleep_time.count() > 0) {
@@ -303,18 +297,13 @@ void capture_frames_callback(CameraCapture* camera) {
         std::cerr << "Capture error: " << e.what() << std::endl;
     }
 
-    // Release resources
+    camera->stopGrabThread();
     for (auto& cam : camera->cameras_) {
-        try {
-            cam.cap.release();
-        } catch (...) {}
+        try { cam.cap.release(); } catch (...) {}
     }
-
     if (camera->show_preview_) {
         for (auto& cam : camera->cameras_) {
-            try {
-                cv::destroyWindow(cam.window_name);
-            } catch (...) {}
+            try { cv::destroyWindow(cam.window_name); } catch (...) {}
         }
     }
 }

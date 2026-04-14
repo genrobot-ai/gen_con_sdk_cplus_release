@@ -12,6 +12,10 @@
 #include <vector>
 #include <atomic>
 #include <functional>
+#include <mutex>
+#include <memory>
+#include <thread>
+#include <deque>
 #include <opencv2/opencv.hpp>
 
 namespace das {
@@ -27,6 +31,17 @@ struct CameraInfo {
     int width;
     int height;
     std::string window_name;
+
+    // Thread-safe latest frame cache (unique_ptr keeps CameraInfo movable)
+    std::unique_ptr<std::mutex> lock = std::make_unique<std::mutex>();
+    cv::Mat latest_frame;
+    uint64_t latest_ts_ns = 0;
+
+    // FPS tracking (sliding window)
+    std::deque<double> cap_fps_ts;
+    double cap_fps_val = 0.0;
+    std::deque<double> disp_fps_ts;
+    double disp_fps_val = 0.0;
 };
 
 /**
@@ -36,15 +51,6 @@ class CameraCapture {
 public:
     using FrameCallback = std::function<void(int camera_id, const cv::Mat& frame, uint64_t timestamp)>;
 
-    /**
-     * @brief Constructor
-     * @param serial_port USB serial path (for filtering video devices)
-     * @param camera_count Number of cameras
-     * @param resolutions Resolution list
-     * @param show_preview Show preview window
-     * @param video_devices Video device paths
-     * @param frame_callback Frame callback
-     */
     CameraCapture(const std::string& serial_port = "",
                   int camera_count = 3,
                   const std::vector<std::pair<int, int>>& resolutions = {{1600, 1296}},
@@ -54,29 +60,15 @@ public:
 
     ~CameraCapture();
 
-    /**
-     * @brief Start frame capture
-     */
     void captureFrames();
-
-    /**
-     * @brief Stop capture
-     */
     void stop();
 
-    /**
-     * @brief Check if running
-     */
+    void startGrabThread();
+    void stopGrabThread();
+    std::pair<cv::Mat, uint64_t> getLatest(CameraInfo& cam);
+
     bool isRunning() const { return running_; }
-
-    /**
-     * @brief Get camera list
-     */
     std::vector<CameraInfo>& getCameras() { return cameras_; }
-
-    /**
-     * @brief Set frame callback
-     */
     void setFrameCallback(FrameCallback callback) { frame_callback_ = callback; }
 
     // Public for external callbacks
@@ -92,6 +84,7 @@ private:
     bool initMainOrSecondCamera(const std::string& dev_main, const std::string& dev_sec, int cam_id);
     std::map<int, std::pair<std::string, std::string>> findConfiguredCameraDevices();
     void initCameras();
+    void syncGrabLoop();
     void displayFrames(const std::vector<std::pair<CameraInfo*, cv::Mat>>& frames_data);
     void releaseResources();
 
@@ -99,6 +92,7 @@ private:
     int camera_count_;
     std::vector<std::pair<int, int>> resolutions_;
     std::vector<std::string> video_devices_;
+    std::unique_ptr<std::thread> grab_thread_;
 };
 
 } // namespace das
