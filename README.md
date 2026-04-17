@@ -86,6 +86,9 @@ cd ..
 
 ./start_gripper.cpp left --print-tactile-info  #Tactile Data Reading
 
+Camera frame rate (The V4 Controller needs to change the frame rate to 60 to obtain 30fps image data. For units shipped after April 2026)
+./start_gripper.cpp left --camera-fps 60
+
 ```
 
 After startup, three image windows appear:
@@ -108,6 +111,8 @@ Terminal 1:
 ./start_gripper.cpp left
 Terminal 2:
 ./start_gripper.cpp right
+Camera frame rate (The V4 Controller needs to change the frame rate to 60 to obtain 30fps image data. For units shipped after April 2026)
+./start_gripper.cpp left --camera-fps 60
 ```
 
 After startup, six image windows appear.

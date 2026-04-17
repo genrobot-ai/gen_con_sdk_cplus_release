@@ -25,10 +25,12 @@ CameraCapture::CameraCapture(const std::string& serial_port,
                              const std::vector<std::pair<int, int>>& resolutions,
                              bool show_preview,
                              const std::vector<std::string>& video_devices,
-                             FrameCallback frame_callback)
+                             FrameCallback frame_callback,
+                             int target_fps)
     : running_(true)
     , show_preview_(show_preview)
     , frame_callback_(frame_callback)
+    , target_fps_(target_fps)
     , serial_port_(serial_port)
     , camera_count_(camera_count)
     , resolutions_(resolutions)
@@ -176,6 +178,7 @@ bool CameraCapture::initCamera(const std::string& dev_path, int cam_id) {
 
             // MJPG format
             cap.set(cv::CAP_PROP_FOURCC, cv::VideoWriter::fourcc('M', 'J', 'P', 'G'));
+            cap.set(cv::CAP_PROP_FPS, static_cast<double>(target_fps_));
 
             // Try requested resolution
             bool success = false;
@@ -524,8 +527,7 @@ void CameraCapture::captureFrames() {
 
     startGrabThread();
 
-    double target_fps = 30.0;
-    double frame_interval = 1.0 / target_fps;
+    double frame_interval = 1.0 / static_cast<double>(target_fps_ > 0 ? target_fps_ : 30);
 
     try {
         while (running_) {

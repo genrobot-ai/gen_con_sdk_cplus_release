@@ -232,8 +232,7 @@ void capture_frames_callback(CameraCapture* camera) {
 
     camera->startGrabThread();
 
-    double target_fps = 30.0;
-    double frame_interval = 1.0 / target_fps;
+    double frame_interval = 1.0 / static_cast<double>(camera->target_fps_ > 0 ? camera->target_fps_ : 30);
 
     try {
         while (camera->running_) {
@@ -351,6 +350,7 @@ void printUsage(const char* program) {
     std::cout << "Options:" << std::endl;
     std::cout << "  --camera-resolutions    Camera resolution 'widthxheight' (default: 1600x1296)" << std::endl;
     std::cout << "  --no-preview            No camera preview window" << std::endl;
+    std::cout << "  --camera-fps <n>        Target camera display frame rate (default 30)" << std::endl;
     std::cout << "  --distance <m>          Fixed gripper distance (m), range [0.0, 0.103]" << std::endl;
     std::cout << "  --sine-wave             Enable sine wave control" << std::endl;
     std::cout << "  --amplitude <m>         Sine amplitude (m), default 0.025" << std::endl;
@@ -365,6 +365,7 @@ void printUsage(const char* program) {
     std::cout << "  " << program << " right --distance 0.1      # Right gripper, 10cm" << std::endl;
     std::cout << "  " << program << " left --sine-wave          # Left gripper, sine wave" << std::endl;
     std::cout << "  " << program << " right --print-tactile-info  # Right gripper, print tactile grid" << std::endl;
+    std::cout << "  " << program << " left --camera-fps 60       # Left gripper, camera fps 60 (V4 Controller needs 60 for ~30fps images)" << std::endl;
 }
 
 int main(int argc, char* argv[]) {
@@ -398,14 +399,17 @@ int main(int argc, char* argv[]) {
     float frequency = 0.5f;
     float duration = 10.0f;
     bool print_tactile_info = false;
+    int camera_fps = 30;
 
     for (int i = 2; i < argc; i++) {
         std::string arg = argv[i];
-        
+
         if (arg == "--camera-resolutions" && i + 1 < argc) {
             camera_resolutions = argv[++i];
         } else if (arg == "--no-preview") {
             show_preview = false;
+        } else if (arg == "--camera-fps" && i + 1 < argc) {
+            camera_fps = std::stoi(argv[++i]);
         } else if (arg == "--print-tactile-info") {
             print_tactile_info = true;
         } else if (arg == "--distance" && i + 1 < argc) {
@@ -446,7 +450,8 @@ int main(int argc, char* argv[]) {
         video_devices,
         make_tactile_callback(print_tactile_info),
         encoder_callback,
-        capture_frames_callback
+        capture_frames_callback,
+        camera_fps
     );
 
     // Setup control mode

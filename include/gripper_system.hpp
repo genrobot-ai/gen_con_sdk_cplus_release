@@ -130,6 +130,7 @@ public:
      * @param tactile_callback Tactile data callback
      * @param encoder_callback Encoder data callback
      * @param capture_frames_callback Frame capture callback
+     * @param camera_fps Target camera display frame rate (default 30)
      */
     GripperSystem(const std::string& serial_port = "",
                   const std::string& camera_resolutions = "1600x1296",
@@ -137,7 +138,8 @@ public:
                   const std::vector<std::string>& video_devices = {},
                   TactileCallback tactile_callback = nullptr,
                   EncoderCallback encoder_callback = nullptr,
-                  FrameCallback capture_frames_callback = nullptr);
+                  FrameCallback capture_frames_callback = nullptr,
+                  int camera_fps = 30);
 
     ~GripperSystem();
 
@@ -188,6 +190,7 @@ private:
     TactileCallback tactile_callback_;
     EncoderCallback encoder_callback_;
     FrameCallback capture_frames_callback_;
+    int camera_fps_;
 
     std::unique_ptr<DataBus> databus_;
     std::unique_ptr<CameraCapture> camera_;

@@ -56,7 +56,8 @@ public:
                   const std::vector<std::pair<int, int>>& resolutions = {{1600, 1296}},
                   bool show_preview = true,
                   const std::vector<std::string>& video_devices = {},
-                  FrameCallback frame_callback = nullptr);
+                  FrameCallback frame_callback = nullptr,
+                  int target_fps = 30);
 
     ~CameraCapture();
 
@@ -76,6 +77,7 @@ public:
     bool show_preview_;
     FrameCallback frame_callback_;
     std::vector<CameraInfo> cameras_;
+    int target_fps_;
 
 private:
     std::vector<std::string> getPhysicalDevices();

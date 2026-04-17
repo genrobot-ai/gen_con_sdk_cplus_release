@@ -86,6 +86,9 @@ cd ..
 
 ./start_gripper.cpp left --print-tactile-info  #触觉数据读取
 
+相机帧率（V4的Controller需要将帧率修改为60才能得到30fps的的图像数据 2026/04之后发货的）
+./start_gripper.cpp left --camera-fps 60
+
 ```
 
 启动后会弹出三个图像窗口:
@@ -108,6 +111,8 @@ cd gen_con_sdk_cplus_release
 ./start_gripper.cpp left
 另一终端启动
 ./start_gripper.cpp right
+相机帧率（V4的Controller需要将帧率修改为60才能得到30fps的的图像数据 2026/04之后发货的）
+./start_gripper.cpp left --camera-fps 60
 ```
 
 启动后会弹出六个图像窗口
