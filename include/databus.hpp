@@ -45,7 +45,7 @@ public:
      * @param yaml_filename YAML output filename for calib
      * @param output_dir Output dir for calib
      * @param quiet_console If true, suppress routine diagnostic prints (threads, packet dump, etc.)
-     * @param mcuid_ascii_only If true with is_calib_cmd, parse reply as das-framed ASCII (MCUID), not protobuf
+     * @param calib_cmd_name Calibration command name (e.g. MCUID, DMZEROSET)
      */
     DataBus(const std::string& tty_port = "/dev/ttyUSB0",
             int baudrate = 921600,
@@ -59,7 +59,7 @@ public:
             const std::string& yaml_filename = "",
             const std::string& output_dir = "",
             bool quiet_console = false,
-            bool mcuid_ascii_only = false);
+            const std::string& calib_cmd_name = "");
 
     ~DataBus();
 
@@ -110,6 +110,11 @@ public:
     void registerCameraCalibCallback(CameraCalibCallback callback);
 
     /**
+     * @brief Wait until calib response is received or timeout expires
+     */
+    bool waitForCalibResponse(double timeout_sec = 3.0, double poll_interval_sec = 0.05);
+
+    /**
      * @brief Stop all threads
      */
     void stop();
@@ -155,7 +160,7 @@ private:
     std::string yaml_filename_;
     std::string output_dir_;
     bool quiet_console_;
-    bool mcuid_ascii_only_;
+    std::string calib_cmd_name_;
 
     std::unique_ptr<std::thread> read_thread_;
     std::unique_ptr<std::thread> parse_thread_;

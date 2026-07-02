@@ -7,6 +7,7 @@
 #include <iostream>
 #include <fstream>
 #include <cstring>
+#include <cstdlib>
 #include <iomanip>
 #include <sstream>
 #include <filesystem>
@@ -470,7 +471,8 @@ std::optional<std::string> MessagePack::extractDasFramedPayload(const std::vecto
 
 bool MessagePack::unpackCameraCalib(const std::vector<uint8_t>& data,
                                      const std::string& yaml_filename,
-                                     const std::string& output_dir) {
+                                     const std::string& output_dir,
+                                     const std::string& calib_cmd_name) {
     try {
         // Print data
         std::cout << "unpack data: ";
@@ -527,7 +529,32 @@ bool MessagePack::unpackCameraCalib(const std::vector<uint8_t>& data,
                 return false;
             }
         } else {
-            std::cout << "Calibration data parsed (no YAML file generated)" << std::endl;
+            const std::string cmd_name = calib_cmd_name.empty()
+                ? (std::getenv("CALIB_CMD_NAME") ? std::getenv("CALIB_CMD_NAME") : "")
+                : calib_cmd_name;
+            const std::string prefix = cmd_name.empty()
+                ? "Device response"
+                : ("Device response (" + cmd_name + ")");
+            bool printable = !payload.empty();
+            if (printable) {
+                for (uint8_t b : payload) {
+                    if (b < 32 || b > 126) {
+                        printable = false;
+                        break;
+                    }
+                }
+            }
+            if (printable) {
+                std::string text(payload.begin(), payload.end());
+                std::cout << prefix << ": " << text << std::endl;
+            } else {
+                std::cout << prefix << ": ";
+                for (uint8_t b : payload) {
+                    std::cout << std::hex << std::setw(2) << std::setfill('0')
+                              << static_cast<int>(b);
+                }
+                std::cout << std::dec << std::endl;
+            }
             return true;
         }
     } catch (const std::exception& e) {

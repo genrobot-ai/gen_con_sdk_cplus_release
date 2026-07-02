@@ -12,6 +12,7 @@
 #include <sys/ioctl.h>
 #include <dirent.h>
 #include <cstring>
+#include <cstdio>
 #include <chrono>
 #include <filesystem>
 
@@ -29,7 +30,7 @@ DataBus::DataBus(const std::string& tty_port,
                  const std::string& yaml_filename,
                  const std::string& output_dir,
                  bool quiet_console,
-                 bool mcuid_ascii_only)
+                 const std::string& calib_cmd_name)
     : tty_port_(tty_port)
     , baudrate_(baudrate)
     , timeout_(timeout)
@@ -46,8 +47,11 @@ DataBus::DataBus(const std::string& tty_port,
     , yaml_filename_(yaml_filename)
     , output_dir_(output_dir)
     , quiet_console_(quiet_console)
-    , mcuid_ascii_only_(mcuid_ascii_only)
+    , calib_cmd_name_(calib_cmd_name)
 {
+    if (!calib_cmd_name_.empty()) {
+        setenv("CALIB_CMD_NAME", calib_cmd_name_.c_str(), 1);
+    }
     openSerial();
     if (!open_serial_success_) {
         throw std::runtime_error("Cannot open serial port: " + tty_port);
@@ -305,42 +309,77 @@ void DataBus::parsingLoop() {
         for (const auto& packet : packets_to_process) {
             try {
                 if (is_calib_cmd_) {
-                    if (mcuid_ascii_only_) {
-                        auto mid = MessagePack::extractDasFramedPayload(packet);
-                        if (mid && !mid->empty()) {
-                            std::cout << "MCUID: " << *mid << std::endl;
+                    auto framed = MessagePack::extractDasFramedPayload(packet);
+                    if (framed && !framed->empty()) {
+                        if (calib_cmd_name_ == "MCUID") {
+                            std::cout << "MCUID: " << *framed << std::endl;
+                        } else {
+                            std::cout << "Device response (" << calib_cmd_name_ << "): "
+                                      << *framed << std::endl;
                         }
                         is_calib_cmd_ = false;
-                    } else {
-                        if (!quiet_console_) {
-                            // Print packet (Python bytes-style)
-                            std::cout << "packet: b'";
-                            for (auto b : packet) {
-                                if (b == '\r') {
-                                    std::cout << "\\r";
-                                } else if (b == '\n') {
-                                    std::cout << "\\n";
-                                } else if (b == '\\') {
-                                    std::cout << "\\\\";
-                                } else if (b == '\'') {
-                                    std::cout << "\\'";
-                                } else if (b >= 32 && b <= 126) {
-                                    // Printable ASCII
-                                    std::cout << static_cast<char>(b);
-                                } else {
-                                    // Non-printable as \xHH
-                                    std::cout << "\\x" << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(b);
-                                }
-                            }
-                            std::cout << "'" << std::dec << std::endl;
-                        }
+                        continue;
+                    }
 
-                        bool success = MessagePack::unpackCameraCalib(packet, yaml_filename_, output_dir_);
-                        if (success) {
-                            if (camera_calib_callback_) {
-                                camera_calib_callback_(packet);
+                    if (!quiet_console_) {
+                        std::cout << "packet: b'";
+                        for (auto b : packet) {
+                            if (b == '\r') {
+                                std::cout << "\\r";
+                            } else if (b == '\n') {
+                                std::cout << "\\n";
+                            } else if (b == '\\') {
+                                std::cout << "\\\\";
+                            } else if (b == '\'') {
+                                std::cout << "\\'";
+                            } else if (b >= 32 && b <= 126) {
+                                std::cout << static_cast<char>(b);
+                            } else {
+                                std::cout << "\\x" << std::hex << std::setw(2) << std::setfill('0')
+                                          << static_cast<int>(b);
                             }
-                            is_calib_cmd_ = false;
+                        }
+                        std::cout << "'" << std::dec << std::endl;
+                    }
+
+                    bool success = MessagePack::unpackCameraCalib(
+                        packet, yaml_filename_, output_dir_, calib_cmd_name_);
+                    if (success) {
+                        if (camera_calib_callback_) {
+                            camera_calib_callback_(packet);
+                        }
+                        is_calib_cmd_ = false;
+                        continue;
+                    }
+
+                    auto pack_opt = MessagePack::unpack(packet);
+                    if (pack_opt) {
+                        for (const auto& record : pack_opt->records) {
+                            if (record.record_type == RecordType::Echo) {
+                                std::string text;
+                                bool printable = !record.record_data.empty();
+                                if (printable) {
+                                    for (uint8_t b : record.record_data) {
+                                        if (b < 32 || b > 126) {
+                                            printable = false;
+                                            break;
+                                        }
+                                    }
+                                }
+                                if (printable) {
+                                    text.assign(record.record_data.begin(), record.record_data.end());
+                                } else {
+                                    for (uint8_t b : record.record_data) {
+                                        char buf[4];
+                                        std::snprintf(buf, sizeof(buf), "%02x", b);
+                                        text += buf;
+                                    }
+                                }
+                                std::cout << "Device response (" << calib_cmd_name_ << "): "
+                                          << text << std::endl;
+                                is_calib_cmd_ = false;
+                                break;
+                            }
                         }
                     }
                 } else {
@@ -471,6 +510,23 @@ void DataBus::tactileLoop() {
     if (!quiet_console_) {
         std::cout << "Tactile loop thread exited" << std::endl;
     }
+}
+
+bool DataBus::waitForCalibResponse(double timeout_sec, double poll_interval_sec) {
+    if (!is_calib_cmd_) {
+        return true;
+    }
+    std::cout << "Waiting for device response..." << std::endl;
+    const auto deadline = std::chrono::steady_clock::now()
+        + std::chrono::duration<double>(timeout_sec);
+    while (std::chrono::steady_clock::now() < deadline) {
+        if (!is_calib_cmd_) {
+            return true;
+        }
+        std::this_thread::sleep_for(
+            std::chrono::duration<double>(poll_interval_sec));
+    }
+    return !is_calib_cmd_;
 }
 
 void DataBus::stop() {

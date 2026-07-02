@@ -121,9 +121,10 @@ public:
      * @param yaml_filename Output YAML filename (empty = no file)
      * @param output_dir Output directory
      */
-    static bool unpackCameraCalib(const std::vector<uint8_t>& data, 
+    static bool unpackCameraCalib(const std::vector<uint8_t>& data,
                                    const std::string& yaml_filename = "",
-                                   const std::string& output_dir = "");
+                                   const std::string& output_dir = "",
+                                   const std::string& calib_cmd_name = "");
 
     /**
      * @brief Extract ASCII payload between two das\\r\\n magic frames (e.g. MCUID reply).

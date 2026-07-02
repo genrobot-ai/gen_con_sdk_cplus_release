@@ -14,9 +14,11 @@
 #   camerarr  - Right camera calibration  -> cam2_sensor_<left|right>.yaml
 #   1234      - Calibration complete confirmation
 #   MCUID     - Query device MCUID
+#   DMZEROSET - Set DM zero offset
 #
 # Examples:
 #   ./camera_cmd.sh MCUID
+#   ./camera_cmd.sh DMZEROSET
 #   ./camera_cmd.sh right MCUID
 #   ./camera_cmd.sh left camerarc
 
