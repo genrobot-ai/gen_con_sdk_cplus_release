@@ -1,4 +1,4 @@
-# Gen Controller C++ SDK
+# Gen Gripper Controller C++ SDK
 
 > C++ SDK for Gen Controller gripper — camera streaming, tactile sensing, encoder feedback, and distance control.
 
@@ -19,6 +19,8 @@ License: [MIT License](LICENSE)
 - CMake build with `camera_cmd` calibration CLI and `camera_cmd.sh` helper
 - Single-gripper and dual-gripper demo workflows
 
+
+
 ## 2 Requirements
 
 
@@ -29,6 +31,8 @@ License: [MIT License](LICENSE)
 | CMake    | 3.16+                         |
 | USB      | USB 3.0 port                  |
 | Hardware | Gen Controller gripper device |
+
+
 
 
 ## 3 Quick Start
@@ -57,17 +61,21 @@ Set a fixed opening distance:
 ./start_gripper.cpp left --distance 0.05   # 5 cm, range [0.0, 0.103] m
 ```
 
+
+
 ## 4 Program Interface
 
 Integrate the SDK by registering callbacks when constructing `GripperSystem` and sending control commands through `DataBus`.
 
 ### 4.1 Sensor Callbacks
 
-| Callback                  | Type                                      | Description                              |
-| ------------------------- | ----------------------------------------- | ---------------------------------------- |
-| `capture_frames_callback` | `void(CameraCapture*)`                    | Camera frame capture and preview loop    |
-| `tactile_callback`        | `void(const std::vector<uint8_t>&)`       | Tactile sensor raw data (448 bytes)      |
-| `encoder_callback`        | `void(const std::vector<uint8_t>&)`       | Gripper opening distance feedback (m)    |
+
+| Callback                  | Type                                | Description                           |
+| ------------------------- | ----------------------------------- | ------------------------------------- |
+| `capture_frames_callback` | `void(CameraCapture*)`              | Camera frame capture and preview loop |
+| `tactile_callback`        | `void(const std::vector<uint8_t>&)` | Tactile sensor raw data (448 bytes)   |
+| `encoder_callback`        | `void(const std::vector<uint8_t>&)` | Gripper opening distance feedback (m) |
+
 
 Example (from `start_gripper.cpp`):
 
@@ -83,6 +91,8 @@ GripperSystem system(
     camera_fps
 );
 ```
+
+
 
 ### 4.2 Gripper Control
 
@@ -102,15 +112,23 @@ controller.setFixedDistance(0.05f);
 controller.startSineWave(amplitude, center, frequency, duration);
 ```
 
+
+
 ### 4.3 Libraries and Headers
 
-| Target           | Description                          |
-| ---------------- | ------------------------------------ |
-| `cpp_sdk_static` | Static library (used by demo script) |
-| `cpp_sdk`        | Shared library                       |
+
+| Target           | Description                             |
+| ---------------- | --------------------------------------- |
+| `cpp_sdk_static` | Static library (used by demo script)    |
+| `cpp_sdk`        | Shared library                          |
 | Headers          | `include/` (`gripper_system.hpp`, etc.) |
 
+
+
+
 ## 5 Installation
+
+
 
 ### 5.1 Install system dependencies
 
@@ -134,11 +152,13 @@ cd ..
 
 Build outputs:
 
-| Artifact              | Path                    |
-| --------------------- | ----------------------- |
-| Static SDK library    | `build/libcpp_sdk_static.a` |
-| Shared SDK library    | `build/libcpp_sdk.so`   |
-| Camera calibration CLI | `build/camera_cmd`     |
+
+| Artifact               | Path                        |
+| ---------------------- | --------------------------- |
+| Static SDK library     | `build/libcpp_sdk_static.a` |
+| Shared SDK library     | `build/libcpp_sdk.so`       |
+| Camera calibration CLI | `build/camera_cmd`          |
+
 
 The `start_gripper.cpp` script links against `libcpp_sdk_static.a` and recompiles on each run.
 
@@ -162,6 +182,8 @@ Default serial symlinks after dual-gripper setup: `/dev/ttyDeviceLeft`, `/dev/tt
 Default camera symlinks: `/dev/left_video_*`, `/dev/right_video_*` (see `start_gripper.cpp` `SIDE_CONFIG`).
 
 ## 7 Usage
+
+
 
 ### 7.1 Single Gripper Demo
 
@@ -206,6 +228,8 @@ For V4 Controller units shipped after April 2026:
 ./start_gripper.cpp right --camera-fps 60
 ```
 
+
+
 ### 7.3 Device Utilities
 
 Do **not** run `start_gripper.cpp` or other control programs while using these commands.
@@ -240,15 +264,17 @@ Calibration YAML files are saved to `calib_result/` (e.g. `cam0_sensor_left.yaml
 ## 8 Troubleshooting
 
 
-| Problem                         | Solution                                                                 |
-| ------------------------------- | ------------------------------------------------------------------------ |
-| Serial port not found           | Run `sudo apt remove brltty`, then replug the device                     |
-| Camera or serial has wrong path | Re-check udev rules; see [docs/usb-setup.md](docs/usb-setup.md)          |
-| V4 Controller frame rate halved | Run with `--camera-fps 60` (units shipped after April 2026)             |
-| `camera_cmd.sh` not found       | Build first: `mkdir -p build && cd build && cmake .. && make`            |
-| `start_gripper.cpp` link error  | Ensure `make` completed and `build/libcpp_sdk_static.a` exists           |
-| OpenCV not found during build   | Install: `sudo apt install libopencv-dev pkg-config`                     |
-| No camera preview               | Check udev camera symlinks; verify with `v4l2-ctl --list-devices`        |
+| Problem                         | Solution                                                          |
+| ------------------------------- | ----------------------------------------------------------------- |
+| Serial port not found           | Run `sudo apt remove brltty`, then replug the device              |
+| Camera or serial has wrong path | Re-check udev rules; see [docs/usb-setup.md](docs/usb-setup.md)   |
+| V4 Controller frame rate halved | Run with `--camera-fps 60` (units shipped after April 2026)       |
+| `camera_cmd.sh` not found       | Build first: `mkdir -p build && cd build && cmake .. && make`     |
+| `start_gripper.cpp` link error  | Ensure `make` completed and `build/libcpp_sdk_static.a` exists    |
+| OpenCV not found during build   | Install: `sudo apt install libopencv-dev pkg-config`              |
+| No camera preview               | Check udev camera symlinks; verify with `v4l2-ctl --list-devices` |
+
+
 
 
 ## 9 Documentation
@@ -265,4 +291,5 @@ Calibration YAML files are saved to `calib_result/` (e.g. `cam0_sensor_left.yaml
 | Demo launcher         | [start_gripper.cpp](start_gripper.cpp)                                                   |
 | Calibration helper    | [camera_cmd.sh](camera_cmd.sh)                                                           |
 | SDK headers           | [include/](include/)                                                                     |
+
 

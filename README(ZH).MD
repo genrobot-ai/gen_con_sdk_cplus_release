@@ -1,4 +1,4 @@
-# Gen Controller C++ SDK
+# Gen Gripper Controller C++ SDK
 
 > 用于 Gen Controller 夹爪的 C++ SDK，支持相机图像、触觉传感、编码器反馈及开合距离控制。
 
