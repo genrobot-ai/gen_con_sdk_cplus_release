@@ -309,13 +309,43 @@ void DataBus::parsingLoop() {
         for (const auto& packet : packets_to_process) {
             try {
                 if (is_calib_cmd_) {
+                    const bool is_camera_cmd =
+                        calib_cmd_name_.rfind("camera", 0) == 0;
+
+                    if (is_camera_cmd) {
+                        bool success = MessagePack::unpackCameraCalib(
+                            packet, yaml_filename_, output_dir_, calib_cmd_name_);
+                        if (success) {
+                            if (camera_calib_callback_) {
+                                camera_calib_callback_(packet);
+                            }
+                            is_calib_cmd_ = false;
+                            continue;
+                        }
+                    }
+
                     auto framed = MessagePack::extractDasFramedPayload(packet);
                     if (framed && !framed->empty()) {
+                        bool printable = true;
+                        for (unsigned char c : *framed) {
+                            if (c < 32 || c > 126) {
+                                printable = false;
+                                break;
+                            }
+                        }
                         if (calib_cmd_name_ == "MCUID") {
-                            std::cout << "MCUID: " << *framed << std::endl;
+                            std::cout << "MCUID: ";
                         } else {
-                            std::cout << "Device response (" << calib_cmd_name_ << "): "
-                                      << *framed << std::endl;
+                            std::cout << "Device response (" << calib_cmd_name_ << "): ";
+                        }
+                        if (printable) {
+                            std::cout << *framed << std::endl;
+                        } else {
+                            for (unsigned char c : *framed) {
+                                std::cout << std::hex << std::setw(2) << std::setfill('0')
+                                          << static_cast<int>(c);
+                            }
+                            std::cout << std::dec << std::endl;
                         }
                         is_calib_cmd_ = false;
                         continue;
@@ -342,14 +372,16 @@ void DataBus::parsingLoop() {
                         std::cout << "'" << std::dec << std::endl;
                     }
 
-                    bool success = MessagePack::unpackCameraCalib(
-                        packet, yaml_filename_, output_dir_, calib_cmd_name_);
-                    if (success) {
-                        if (camera_calib_callback_) {
-                            camera_calib_callback_(packet);
+                    if (!is_camera_cmd) {
+                        bool success = MessagePack::unpackCameraCalib(
+                            packet, yaml_filename_, output_dir_, calib_cmd_name_);
+                        if (success) {
+                            if (camera_calib_callback_) {
+                                camera_calib_callback_(packet);
+                            }
+                            is_calib_cmd_ = false;
+                            continue;
                         }
-                        is_calib_cmd_ = false;
-                        continue;
                     }
 
                     auto pack_opt = MessagePack::unpack(packet);
