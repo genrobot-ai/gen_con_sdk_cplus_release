@@ -351,6 +351,7 @@ void printUsage(const char* program) {
     std::cout << "  --camera-resolutions    Camera resolution 'widthxheight' (default: 1600x1296)" << std::endl;
     std::cout << "  --no-preview            No camera preview window" << std::endl;
     std::cout << "  --camera-fps <n>        Target camera display frame rate (default 30)" << std::endl;
+    std::cout << "  --gripper-type <type>   default_gripper, tactile_gripper, or soft_gripper" << std::endl;
     std::cout << "  --distance <m>          Fixed gripper distance (m), range [0.0, 0.103]" << std::endl;
     std::cout << "  --sine-wave             Enable sine wave control" << std::endl;
     std::cout << "  --amplitude <m>         Sine amplitude (m), default 0.025" << std::endl;
@@ -400,6 +401,7 @@ int main(int argc, char* argv[]) {
     float duration = 10.0f;
     bool print_tactile_info = false;
     int camera_fps = 30;
+    std::string gripper_type = "default_gripper";
 
     for (int i = 2; i < argc; i++) {
         std::string arg = argv[i];
@@ -410,6 +412,8 @@ int main(int argc, char* argv[]) {
             show_preview = false;
         } else if (arg == "--camera-fps" && i + 1 < argc) {
             camera_fps = std::stoi(argv[++i]);
+        } else if (arg == "--gripper-type" && i + 1 < argc) {
+            gripper_type = argv[++i];
         } else if (arg == "--print-tactile-info") {
             print_tactile_info = true;
         } else if (arg == "--distance" && i + 1 < argc) {
@@ -451,7 +455,8 @@ int main(int argc, char* argv[]) {
         make_tactile_callback(print_tactile_info),
         encoder_callback,
         capture_frames_callback,
-        camera_fps
+        camera_fps,
+        gripper_type
     );
 
     // Setup control mode

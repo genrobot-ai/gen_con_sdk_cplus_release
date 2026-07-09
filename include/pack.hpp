@@ -79,7 +79,10 @@ public:
     /**
      * @brief Pack command
      */
-    static CmdPack pack(Opcode opcode, RecordType record_type, const std::vector<uint8_t>& record = {});
+    static CmdPack pack(Opcode opcode,
+                        RecordType record_type,
+                        const std::vector<uint8_t>& record = {},
+                        const std::string& gripper_type = "default_gripper");
 
     /**
      * @brief Pack calibration command

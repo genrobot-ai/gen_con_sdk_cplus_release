@@ -54,8 +54,16 @@ cd ..
 设置固定开合距离：
 
 ```shell
-./start_gripper.cpp left --distance 0.05   # 5 cm，范围 [0.0, 0.103] m
+./start_gripper.cpp left --distance 0.05   # 5 cm
 ```
+
+通过 `--gripper-type` 切换夹爪类型。不同夹爪的最大打开后距离如下：
+
+| 夹爪类型 | 最大打开后距离 |
+| --- | ---: |
+| `default_gripper` | `0.103` m |
+| `tactile_gripper` | `0.0998` m |
+| `soft_gripper` | `0.103` m |
 
 ## 4 程序接口
 
@@ -90,7 +98,7 @@ GripperSystem system(
 
 ```cpp
 if (databus_) {
-    databus_->setTargetDistance(distance);  // 范围 [0.0, 0.103] m
+    databus_->setTargetDistance(distance);
 }
 ```
 
@@ -170,6 +178,8 @@ cd ..
 cd gen_con_sdk_cplus_release
 ./start_gripper.cpp left                              # 默认：打开 5 cm
 ./start_gripper.cpp left --distance 0.08              # 固定打开 8 cm
+./start_gripper.cpp left --gripper-type tactile_gripper
+./start_gripper.cpp left --gripper-type soft_gripper
 ./start_gripper.cpp left --sine-wave                  # 正弦波开合 10 s
 ./start_gripper.cpp left --print-tactile-info         # 打印触觉网格
 ./start_gripper.cpp left --no-preview                 # 关闭预览窗口

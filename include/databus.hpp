@@ -59,7 +59,8 @@ public:
             const std::string& yaml_filename = "",
             const std::string& output_dir = "",
             bool quiet_console = false,
-            const std::string& calib_cmd_name = "");
+            const std::string& calib_cmd_name = "",
+            const std::string& gripper_type = "default_gripper");
 
     ~DataBus();
 
@@ -161,6 +162,7 @@ private:
     std::string output_dir_;
     bool quiet_console_;
     std::string calib_cmd_name_;
+    std::string gripper_type_;
 
     std::unique_ptr<std::thread> read_thread_;
     std::unique_ptr<std::thread> parse_thread_;

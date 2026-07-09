@@ -58,8 +58,16 @@ Verify feedback in the console:
 Set a fixed opening distance:
 
 ```shell
-./start_gripper.cpp left --distance 0.05   # 5 cm, range [0.0, 0.103] m
+./start_gripper.cpp left --distance 0.05   # 5 cm
 ```
+
+Select the gripper type with `--gripper-type`. The maximum opening distance depends on the gripper:
+
+| Gripper type | Maximum opening distance |
+| --- | ---: |
+| `default_gripper` | `0.103` m |
+| `tactile_gripper` | `0.0998` m |
+| `soft_gripper` | `0.103` m |
 
 
 
@@ -100,7 +108,7 @@ Send target opening distance through `DataBus`:
 
 ```cpp
 if (databus_) {
-    databus_->setTargetDistance(distance);  // range [0.0, 0.103] m
+    databus_->setTargetDistance(distance);
 }
 ```
 
@@ -191,6 +199,8 @@ Default camera symlinks: `/dev/left_video_*`, `/dev/right_video_*` (see `start_g
 cd gen_con_sdk_cplus_release
 ./start_gripper.cpp left                              # Default: open to 5 cm
 ./start_gripper.cpp left --distance 0.08              # Fixed 8 cm
+./start_gripper.cpp left --gripper-type tactile_gripper
+./start_gripper.cpp left --gripper-type soft_gripper
 ./start_gripper.cpp left --sine-wave                  # Sine wave for 10 s
 ./start_gripper.cpp left --print-tactile-info         # Print tactile grid
 ./start_gripper.cpp left --no-preview                 # Disable preview windows

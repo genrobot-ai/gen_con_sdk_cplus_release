@@ -21,7 +21,8 @@ GripperSystem::GripperSystem(const std::string& serial_port,
                              TactileCallback tactile_callback,
                              EncoderCallback encoder_callback,
                              FrameCallback capture_frames_callback,
-                             int camera_fps)
+                             int camera_fps,
+                             const std::string& gripper_type)
     : running_(true)
     , serial_port_(serial_port)
     , camera_resolutions_(camera_resolutions)
@@ -31,6 +32,7 @@ GripperSystem::GripperSystem(const std::string& serial_port,
     , encoder_callback_(encoder_callback)
     , capture_frames_callback_(capture_frames_callback)
     , camera_fps_(camera_fps)
+    , gripper_type_(gripper_type)
 {
     // Parse resolutions
     resolutions_ = parseResolutions(camera_resolutions);
@@ -140,7 +142,13 @@ bool GripperSystem::start() {
             30,  // 30Hz encoder query
             0,   // Tactile query disabled
             tactile_callback_,
-            encoder_callback_
+            encoder_callback_,
+            nullptr,
+            "",
+            "",
+            false,
+            "",
+            gripper_type_
         );
         std::cout << "Serial initialized" << std::endl;
     } catch (const std::exception& e) {

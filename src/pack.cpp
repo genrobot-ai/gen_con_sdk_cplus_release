@@ -37,7 +37,16 @@ CmdPack::CmdPack(const std::vector<uint8_t>& data,
                  const std::vector<uint8_t>& record_data)
     : data(data), opcode(opcode), record_type(record_type), record_data(record_data) {}
 
-CmdPack CmdPack::pack(Opcode opcode, RecordType record_type, const std::vector<uint8_t>& record) {
+namespace {
+uint8_t gripperTypeByte(const std::string& gripper_type) {
+    return (gripper_type == "tactile_gripper" || gripper_type == "soft_gripper") ? 0x04 : 0x00;
+}
+}
+
+CmdPack CmdPack::pack(Opcode opcode,
+                      RecordType record_type,
+                      const std::vector<uint8_t>& record,
+                      const std::string& gripper_type) {
     std::vector<uint8_t> packet;
     
     // Magic
@@ -57,7 +66,7 @@ CmdPack CmdPack::pack(Opcode opcode, RecordType record_type, const std::vector<u
     packet.push_back(len & 0xFF);
     
     // Padding bytes
-    packet.push_back(0);
+    packet.push_back(gripperTypeByte(gripper_type));
     packet.push_back(0);
     
     // Torque value (big-endian 16-bit, fixed 80)

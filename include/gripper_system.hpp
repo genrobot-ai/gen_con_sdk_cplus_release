@@ -139,7 +139,8 @@ public:
                   TactileCallback tactile_callback = nullptr,
                   EncoderCallback encoder_callback = nullptr,
                   FrameCallback capture_frames_callback = nullptr,
-                  int camera_fps = 30);
+                  int camera_fps = 30,
+                  const std::string& gripper_type = "default_gripper");
 
     ~GripperSystem();
 
@@ -191,6 +192,7 @@ private:
     EncoderCallback encoder_callback_;
     FrameCallback capture_frames_callback_;
     int camera_fps_;
+    std::string gripper_type_;
 
     std::unique_ptr<DataBus> databus_;
     std::unique_ptr<CameraCapture> camera_;

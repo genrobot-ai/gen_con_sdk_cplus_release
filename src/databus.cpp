@@ -30,7 +30,8 @@ DataBus::DataBus(const std::string& tty_port,
                  const std::string& yaml_filename,
                  const std::string& output_dir,
                  bool quiet_console,
-                 const std::string& calib_cmd_name)
+                 const std::string& calib_cmd_name,
+                 const std::string& gripper_type)
     : tty_port_(tty_port)
     , baudrate_(baudrate)
     , timeout_(timeout)
@@ -48,6 +49,7 @@ DataBus::DataBus(const std::string& tty_port,
     , output_dir_(output_dir)
     , quiet_console_(quiet_console)
     , calib_cmd_name_(calib_cmd_name)
+    , gripper_type_(gripper_type)
 {
     if (!calib_cmd_name_.empty()) {
         setenv("CALIB_CMD_NAME", calib_cmd_name_.c_str(), 1);
@@ -170,15 +172,15 @@ float DataBus::getTargetDistance() {
 }
 
 void DataBus::driveMotor(float angle_degree) {
-    addCmd(CmdPack::pack(Opcode::WriteDrive, RecordType::Drive, floatToBigEndianBytes(angle_degree)));
+    addCmd(CmdPack::pack(Opcode::WriteDrive, RecordType::Drive, floatToBigEndianBytes(angle_degree), gripper_type_));
 }
 
 void DataBus::disableMotor() {
-    addCmd(CmdPack::pack(Opcode::DisableDrive, RecordType::Drive));
+    addCmd(CmdPack::pack(Opcode::DisableDrive, RecordType::Drive, {}, gripper_type_));
 }
 
 void DataBus::calibEncoder() {
-    addCmd(CmdPack::pack(Opcode::CalibEncoder, RecordType::Drive));
+    addCmd(CmdPack::pack(Opcode::CalibEncoder, RecordType::Drive, {}, gripper_type_));
 }
 
 bool DataBus::sendCameraCalibCmd(const std::string& camera_cmd) {
@@ -507,7 +509,7 @@ void DataBus::encoderLoop() {
             dis_target = gripper_dis_;
         }
 
-        addCmd(CmdPack::pack(Opcode::ReadBatch, RecordType::Encoder, floatToBigEndianBytes(dis_target)));
+        addCmd(CmdPack::pack(Opcode::ReadBatch, RecordType::Encoder, floatToBigEndianBytes(dis_target), gripper_type_));
 
         auto elapsed = std::chrono::steady_clock::now() - start_time;
         auto sleep_time = std::chrono::duration<double>(interval) - elapsed;
@@ -531,7 +533,7 @@ void DataBus::tactileLoop() {
     while (is_running_) {
         auto start_time = std::chrono::steady_clock::now();
 
-        addCmd(CmdPack::pack(Opcode::ReadSingle, RecordType::Tactile, floatToBigEndianBytes(0.0f)));
+        addCmd(CmdPack::pack(Opcode::ReadSingle, RecordType::Tactile, floatToBigEndianBytes(0.0f), gripper_type_));
 
         auto elapsed = std::chrono::steady_clock::now() - start_time;
         auto sleep_time = std::chrono::duration<double>(interval) - elapsed;
